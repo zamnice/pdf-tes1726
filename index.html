@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Penampil PDF Responsive</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    #pdf-render {
+      border: 1px solid #ccc;
+      margin: 1rem 0;
+      max-width: 100%;
+      height: auto;
+    }
+    #controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 1rem;
+    }
+    button {
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+    }
+    #page-info {
+      margin-top: 0.5rem;
+    }
+    canvas {
+      width: 100%;
+      height: auto;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>📄 Penampil PDF Interaktif</h2>
+
+  <div id="controls">
+    <button id="prev">⬅ Prev</button>
+    <button id="next">Next ➡</button>
+  </div>
+
+  <div id="page-info">Halaman <span id="page-num"></span> dari <span id="page-count"></span></div>
+
+  <canvas id="pdf-render"></canvas>
+
+  <!-- PDF.js CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+  <script>
+    const url = 'https://drive.google.com/uc?export=download&id=1t1rIJ0trQIMhr8bzGzgdzm9p4YnS0JzJ';
+    // Kalau pakai Google Drive public, bisa ganti ini:
+    // const url = 'https://drive.google.com/uc?export=download&id=1t1rIJ0trQIMhr8bzGzgdzm9p4YnS0JzJ';
+
+    let pdfDoc = null,
+        pageNum = 1,
+        pageIsRendering = false,
+        pageNumIsPending = null;
+
+    const scale = 1.5,
+          canvas = document.getElementById('pdf-render'),
+          ctx = canvas.getContext('2d');
+
+    const renderPage = num => {
+      pageIsRendering = true;
+
+      pdfDoc.getPage(num).then(page => {
+        const viewport = page.getViewport({ scale });
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+
+        const renderCtx = {
+          canvasContext: ctx,
+          viewport
+        };
+
+        page.render(renderCtx).promise.then(() => {
+          pageIsRendering = false;
+
+          if (pageNumIsPending !== null) {
+            renderPage(pageNumIsPending);
+            pageNumIsPending = null;
+          }
+        });
+
+        document.getElementById('page-num').textContent = num;
+      });
+    };
+
+    const queueRenderPage = num => {
+      if (pageIsRendering) {
+        pageNumIsPending = num;
+      } else {
+        renderPage(num);
+      }
+    };
+
+    const showPrevPage = () => {
+      if (pageNum <= 1) return;
+      pageNum--;
+      queueRenderPage(pageNum);
+    };
+
+    const showNextPage = () => {
+      if (pageNum >= pdfDoc.numPages) return;
+      pageNum++;
+      queueRenderPage(pageNum);
+    };
+
+    pdfjsLib.getDocument(url).promise.then(pdfDoc_ => {
+      pdfDoc = pdfDoc_;
+      document.getElementById('page-count').textContent = pdfDoc.numPages;
+
+      renderPage(pageNum);
+    });
+
+    document.getElementById('prev').addEventListener('click', showPrevPage);
+    document.getElementById('next').addEventListener('click', showNextPage);
+  </script>
+
+</body>
+</html>
