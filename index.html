@@ -2,127 +2,242 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>Penampil PDF Responsive</title>
+  <title>📚 Penampil PDF Super</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
-      font-family: sans-serif;
       margin: 0;
-      padding: 0;
+      font-family: sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      transition: background 0.3s, color 0.3s;
+    }
+
+    :root {
+      --bg: #ffffff;
+      --text: #000000;
+    }
+
+    .dark {
+      --bg: #121212;
+      --text: #ffffff;
+    }
+
+    header {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      padding: 10px;
+      background: #f0f0f0;
+    }
+
+    canvas {
+      max-width: 100%;
+      display: block;
+      margin: 0 auto;
+    }
+
+    #viewer {
       display: flex;
       flex-direction: column;
       align-items: center;
+      padding: 1rem;
     }
-    #pdf-render {
-      border: 1px solid #ccc;
-      margin: 1rem 0;
-      max-width: 100%;
-      height: auto;
+
+    button, input {
+      padding: 8px 12px;
+      margin: 4px;
     }
-    #controls {
-      display: flex;
-      gap: 10px;
+
+    input[type="number"] {
+      width: 60px;
+    }
+
+    .controls {
       margin-bottom: 1rem;
     }
-    button {
-      padding: 0.5rem 1rem;
-      cursor: pointer;
-    }
-    #page-info {
-      margin-top: 0.5rem;
-    }
-    canvas {
-      width: 100%;
-      height: auto;
+
+    #multi-page-view canvas {
+      margin-bottom: 20px;
     }
   </style>
 </head>
 <body>
 
-  <h2>📄 Penampil PDF Interaktif</h2>
+<header>
+  <button id="prev">⬅ Prev</button>
+  <button id="next">Next ➡</button>
+  <span>Halaman <span id="page-num"></span> dari <span id="page-count"></span></span>
+  <input type="number" id="page-input" placeholder="Lompat ke..." min="1">
+  <button id="zoom-in">🔍+</button>
+  <button id="zoom-out">🔍−</button>
+  <button id="toggle-dark">🌓 Mode</button>
+  <button id="download">⬇️ Download</button>
+  <button id="print">🖨️ Print</button>
+</header>
 
-  <div id="controls">
-    <button id="prev">⬅ Prev</button>
-    <button id="next">Next ➡</button>
-  </div>
-
-  <div id="page-info">Halaman <span id="page-num"></span> dari <span id="page-count"></span></div>
-
+<div id="viewer">
   <canvas id="pdf-render"></canvas>
+</div>
 
-  <!-- PDF.js CDN -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<hr>
 
-  <script>
-    const url = 'assets/tes.pdf';
-    // Kalau pakai Google Drive public, bisa ganti ini:
-    // const url = 'https://drive.google.com/uc?export=download&id=1t1rIJ0trQIMhr8bzGzgdzm9p4YnS0JzJ';
+<div id="multi-page-view"></div>
 
-    let pdfDoc = null,
-        pageNum = 1,
-        pageIsRendering = false,
-        pageNumIsPending = null;
+<!-- PDF.js CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
-    const scale = 1.5,
-          canvas = document.getElementById('pdf-render'),
-          ctx = canvas.getContext('2d');
+<script>
+  const url = 'assets/tes.pdf'; // Ganti ke file lokalmu
 
-    const renderPage = num => {
-      pageIsRendering = true;
+  let pdfDoc = null,
+      pageNum = 1,
+      pageIsRendering = false,
+      pageNumIsPending = null,
+      scale = 1.2,
+      canvas = document.getElementById('pdf-render'),
+      ctx = canvas.getContext('2d');
 
-      pdfDoc.getPage(num).then(page => {
-        const viewport = page.getViewport({ scale });
-        canvas.height = viewport.height;
-        canvas.width = viewport.width;
+  const renderPage = num => {
+    pageIsRendering = true;
+    pdfDoc.getPage(num).then(page => {
+      const viewport = page.getViewport({ scale });
+      canvas.height = viewport.height;
+      canvas.width = viewport.width;
 
-        const renderCtx = {
-          canvasContext: ctx,
-          viewport
-        };
+      const renderCtx = {
+        canvasContext: ctx,
+        viewport
+      };
 
-        page.render(renderCtx).promise.then(() => {
-          pageIsRendering = false;
+      page.render(renderCtx).promise.then(() => {
+        pageIsRendering = false;
+        if (pageNumIsPending !== null) {
+          renderPage(pageNumIsPending);
+          pageNumIsPending = null;
+        }
+      });
 
-          if (pageNumIsPending !== null) {
-            renderPage(pageNumIsPending);
-            pageNumIsPending = null;
-          }
+      document.getElementById('page-num').textContent = num;
+      localStorage.setItem('lastPage', num);
+    });
+  };
+
+  const queueRenderPage = num => {
+    if (pageIsRendering) {
+      pageNumIsPending = num;
+    } else {
+      renderPage(num);
+    }
+  };
+
+  const showPrevPage = () => {
+    if (pageNum <= 1) return;
+    pageNum--;
+    queueRenderPage(pageNum);
+  };
+
+  const showNextPage = () => {
+    if (pageNum >= pdfDoc.numPages) return;
+    pageNum++;
+    queueRenderPage(pageNum);
+  };
+
+  const zoomIn = () => {
+    scale += 0.2;
+    queueRenderPage(pageNum);
+  };
+
+  const zoomOut = () => {
+    if (scale > 0.4) {
+      scale -= 0.2;
+      queueRenderPage(pageNum);
+    }
+  };
+
+  const jumpToPage = () => {
+    const num = parseInt(document.getElementById('page-input').value);
+    if (num >= 1 && num <= pdfDoc.numPages) {
+      pageNum = num;
+      queueRenderPage(pageNum);
+    }
+  };
+
+  const toggleDarkMode = () => {
+    document.body.classList.toggle('dark');
+    localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
+  };
+
+  const downloadPDF = () => {
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'dokumen.pdf';
+    a.click();
+  };
+
+  const printPDF = () => {
+    window.open(url, '_blank').print();
+  };
+
+  const renderAllPages = pdf => {
+    const container = document.getElementById('multi-page-view');
+    for (let i = 1; i <= pdf.numPages; i++) {
+      pdf.getPage(i).then(page => {
+        const viewport = page.getViewport({ scale: 0.8 });
+        const c = document.createElement('canvas');
+        c.width = viewport.width;
+        c.height = viewport.height;
+        const context = c.getContext('2d');
+
+        page.render({
+          canvasContext: context,
+          viewport: viewport
         });
 
-        document.getElementById('page-num').textContent = num;
+        container.appendChild(c);
       });
-    };
+    }
+  };
 
-    const queueRenderPage = num => {
-      if (pageIsRendering) {
-        pageNumIsPending = num;
-      } else {
-        renderPage(num);
-      }
-    };
+  // Load PDF
+  pdfjsLib.getDocument(url).promise.then(pdfDoc_ => {
+    pdfDoc = pdfDoc_;
+    document.getElementById('page-count').textContent = pdfDoc.numPages;
 
-    const showPrevPage = () => {
-      if (pageNum <= 1) return;
-      pageNum--;
-      queueRenderPage(pageNum);
-    };
+    const saved = parseInt(localStorage.getItem('lastPage')) || 1;
+    pageNum = saved;
+    renderPage(pageNum);
+    renderAllPages(pdfDoc);
+  });
 
-    const showNextPage = () => {
-      if (pageNum >= pdfDoc.numPages) return;
-      pageNum++;
-      queueRenderPage(pageNum);
-    };
+  // Event Listeners
+  document.getElementById('prev').addEventListener('click', showPrevPage);
+  document.getElementById('next').addEventListener('click', showNextPage);
+  document.getElementById('zoom-in').addEventListener('click', zoomIn);
+  document.getElementById('zoom-out').addEventListener('click', zoomOut);
+  document.getElementById('page-input').addEventListener('change', jumpToPage);
+  document.getElementById('toggle-dark').addEventListener('click', toggleDarkMode);
+  document.getElementById('download').addEventListener('click', downloadPDF);
+  document.getElementById('print').addEventListener('click', printPDF);
 
-    pdfjsLib.getDocument(url).promise.then(pdfDoc_ => {
-      pdfDoc = pdfDoc_;
-      document.getElementById('page-count').textContent = pdfDoc.numPages;
+  // Dark Mode default dari localStorage
+  if (localStorage.getItem('theme') === 'dark') {
+    document.body.classList.add('dark');
+  }
 
-      renderPage(pageNum);
-    });
-
-    document.getElementById('prev').addEventListener('click', showPrevPage);
-    document.getElementById('next').addEventListener('click', showNextPage);
-  </script>
+  // Swipe Next/Prev di HP
+  let touchStartX = 0;
+  canvas.addEventListener('touchstart', e => {
+    touchStartX = e.changedTouches[0].screenX;
+  });
+  canvas.addEventListener('touchend', e => {
+    const deltaX = e.changedTouches[0].screenX - touchStartX;
+    if (deltaX > 50) showPrevPage();
+    else if (deltaX < -50) showNextPage();
+  });
+</script>
 
 </body>
 </html>
