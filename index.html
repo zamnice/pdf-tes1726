@@ -340,6 +340,51 @@
       color: var(--warm-text);
     }
 
+    .page-thumbnails {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            z-index: 2000;
+            overflow-y: auto;
+            padding: 2rem;
+            box-sizing: border-box;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .page-thumbnails.active {
+            display: block;
+            opacity: 1;
+        }
+
+        .close-thumbnails {
+            position: fixed;
+            top: 1.5rem;
+            right: 1.5rem;
+            color: white;
+            font-size: 2.5rem;
+            cursor: pointer;
+            background-color: rgba(0, 0, 0, 0.5);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            z-index: 2001;
+        }
+
+        .close-thumbnails:hover {
+            background-color: rgba(255, 0, 0, 0.7);
+            transform: rotate(90deg);
+        }
+    
+
     /* Mobile responsiveness */
     @media (max-width: 768px) {
       .header {
@@ -481,6 +526,16 @@
     </div>
     <div id="thumbnails-container"></div>
   </div>
+
+   <!-- Thumbnails Modal -->
+    <div class="page-thumbnails" id="thumbnailsModal">
+        <span class="close-thumbnails" id="closeThumbnails">
+            <i class="fas fa-times"></i>
+        </span>
+        <div class="thumbnails-container" id="thumbnailsContainer">
+            <!-- Thumbnails will be inserted here -->
+        </div>
+    </div>
 
   <div class="bottom-nav">
     <button class="nav-btn" id="show-thumbnails">
@@ -694,6 +749,23 @@
       }
     };
 
+          thumbnailsBtn.addEventListener('click', function() {
+            if (!pdfDoc) return;
+            thumbnailsModal.classList.add('active');
+            document.body.style.overflow = 'hidden'; // Mencegah scrolling latar belakang
+        });
+        
+        closeThumbnails.addEventListener('click', function() {
+            thumbnailsModal.classList.remove('active');
+            document.body.style.overflow = ''; // Mengembalikan scrolling
+        });
+        
+        window.addEventListener('click', function(event) {
+            if (event.target === thumbnailsModal) {
+                thumbnailsModal.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        });
     // Load default PDF
     pdfjsLib.getDocument(url).promise.then(pdfDoc_ => {
       pdfDoc = pdfDoc_;
