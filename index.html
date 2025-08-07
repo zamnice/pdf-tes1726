@@ -1,112 +1,659 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>MerakitZam Super Viewer</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MerakitZam PDF Viewer</title>
+    <!-- Font Awesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #ff6b00;
+            --navbar-color: #6F4E37;
+            --bg-color: #ffffff;
+            --text-color: #333333;
+            --card-bg: #f8f9fa;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
 
-  <!-- Google Fonts: Poppins -->
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <!-- Font Awesome -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <!-- PDF.js -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+        /* Dark Mode */
+        .dark-mode {
+            --bg-color: #1a1a1a;
+            --text-color: #f0f0f0;
+            --card-bg: #2d2d2d;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
 
-  <style>
-    :root {
-      --primary: #FF6B00;
-      --secondary: #6F4E37;
-      --bg: #ffffff;
-      --text: #222222;
-      --dark-bg: #121212;
-      --dark-text: #f0f0f0;
-      --warm-bg: #fff8f0;
-      --warm-text: #3a3229;
-      --card-shadow: 0 4px 12px rgba(0,0,0,0.15);
-      --transition: all 0.3s ease;
-    }
+        /* Warm Mode */
+        .warm-mode {
+            --bg-color: #fff8f0;
+            --text-color: #5a3e36;
+            --card-bg: #ffe8d6;
+            --shadow: 0 4px 6px rgba(139, 69, 19, 0.1);
+        }
 
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: 'Poppins', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      transition: var(--transition);
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-    }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
 
-    body.dark {
-      background: var(--dark-bg);
-      color: var(--dark-text);
-    }
+        .top-navbar {
+            background-color: var(--navbar-color);
+            color: white;
+            padding: 0.8rem 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
 
-    body.warm {
-      background: var(--warm-bg);
-      color: var(--warm-text);
-    }
+        .brand {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #ff6b00;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+        }
 
-    .grayscale {
-      filter: grayscale(100%);
-    }
+        .top-controls {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
 
-    .header {
-      background: var(--secondary);
-      color: white;
-      padding: 0.8rem 1rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-      z-index: 100;
-    }
+        .bottom-navbar {
+            background-color: var(--navbar-color);
+            color: white;
+            padding: 0.8rem 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow);
+            position: sticky;
+            bottom: 0;
+            z-index: 1000;
+        }
 
-    .brand {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: var(--primary);
-      text-decoration: none;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
+        .control-btn {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+        }
 
-    .brand-logo {
-      height: 30px;
-    }
+        .control-btn:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+            transform: scale(1.05);
+        }
 
-    .top-controls {
-      display: flex;
-      gap: 1rem;
-      align-items: center;
-    }
+        .page-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
 
-    .control-group {
-      display: flex;
-      gap: 0.5rem;
-      align-items: center;
-      background: rgba(255,255,255,0.1);
-      padding: 0.5rem 0.8rem;
-      border-radius: 50px;
-    }
+        .page-input {
+            width: 60px;
+            padding: 0.3rem;
+            border-radius: 20px;
+            border: none;
+            text-align: center;
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
 
-    .control-btn {
-      background: none;
-      border: none;
-      color: white;
-      font-size: 1rem;
-      cursor: pointer;
-      padding: 0.5rem;
-      border-radius: 50%;
-      transition: var(--transition);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 36px;
-      height: 36px;
-    }
+        .page-input:focus {
+            outline: none;
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .pdf-container {
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            transition: var(--transition);
+            margin-bottom: 1rem;
+        }
+
+        .pdf-viewer {
+            width: 100%;
+            height: 70vh;
+            border: none;
+            display: block;
+        }
+
+        .grayscale {
+            filter: grayscale(100%);
+        }
+
+        .controls-card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            padding: 1rem;
+            box-shadow: var(--shadow);
+            margin-bottom: 1rem;
+            width: 100%;
+            max-width: 900px;
+        }
+
+        .file-controls {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 0.6rem 1.2rem;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #e05d00;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background-color: rgba(0, 0, 0, 0.1);
+            color: var(--text-color);
+        }
+
+        .btn-secondary:hover {
+            background-color: rgba(0, 0, 0, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            right: 0;
+            background-color: var(--card-bg);
+            min-width: 180px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            z-index: 1;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        .dropdown-item {
+            color: var(--text-color);
+            padding: 0.8rem 1rem;
+            text-decoration: none;
+            display: block;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .dropdown-item:hover {
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+
+        /* Thumbnail Modal Styles */
+        .page-thumbnails {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            z-index: 2000;
+            overflow-y: auto;
+            padding: 2rem;
+            box-sizing: border-box;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .page-thumbnails.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .thumbnails-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 1rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .thumbnail {
+            background-color: white;
+            padding: 0.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .thumbnail:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .thumbnail img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .close-thumbnails {
+            position: fixed;
+            top: 1.5rem;
+            right: 1.5rem;
+            color: white;
+            font-size: 2.5rem;
+            cursor: pointer;
+            background-color: rgba(0, 0, 0, 0.5);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            z-index: 2001;
+        }
+
+        .close-thumbnails:hover {
+            background-color: rgba(255, 0, 0, 0.7);
+            transform: rotate(90deg);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .top-navbar, .bottom-navbar {
+                flex-direction: column;
+                gap: 0.5rem;
+                padding: 0.5rem;
+            }
+
+            .top-controls, .page-controls {
+                width: 100%;
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+
+            .pdf-container {
+                border-radius: 8px;
+            }
+
+            .controls-card {
+                padding: 0.8rem;
+            }
+
+            .file-controls {
+                gap: 0.5rem;
+            }
+
+            .btn {
+                padding: 0.5rem 1rem;
+                font-size: 0.9rem;
+            }
+
+            .thumbnails-container {
+                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            }
+        }
+
+        @media (max-width: 480px) {
+            .brand {
+                font-size: 1.4rem;
+            }
+
+            .control-btn {
+                width: 35px;
+                height: 35px;
+                font-size: 0.9rem;
+            }
+
+            .page-input {
+                width: 50px;
+            }
+
+            .thumbnails-container {
+                grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+                gap: 0.5rem;
+            }
+
+            .close-thumbnails {
+                top: 1rem;
+                right: 1rem;
+                width: 40px;
+                height: 40px;
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Navigation Bar -->
+    <div class="top-navbar">
+        <div class="brand">MerakitZam</div>
+        <div class="top-controls">
+            <div class="dropdown">
+                <button class="btn btn-secondary">
+                    <i class="fas fa-palette"></i> Theme
+                </button>
+                <div class="dropdown-content">
+                    <div class="dropdown-item" onclick="setTheme('light')">
+                        <i class="fas fa-sun"></i> Light Mode
+                    </div>
+                    <div class="dropdown-item" onclick="setTheme('dark')">
+                        <i class="fas fa-moon"></i> Dark Mode
+                    </div>
+                    <div class="dropdown-item" onclick="setTheme('warm')">
+                        <i class="fas fa-fire"></i> Warm Mode
+                    </div>
+                </div>
+            </div>
+            
+            <button class="btn btn-primary" id="uploadBtn">
+                <i class="fas fa-upload"></i> Upload PDF
+            </button>
+            <button class="btn btn-primary" id="downloadBtn">
+                <i class="fas fa-download"></i> Download
+            </button>
+            <button class="btn btn-secondary" id="grayscaleBtn">
+                <i class="fas fa-adjust"></i> Grayscale
+            </button>
+            <button class="btn btn-secondary" id="thumbnailsBtn">
+                <i class="fas fa-th-list"></i> Thumbnails
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="controls-card">
+            <div class="file-controls">
+                <input type="file" id="fileInput" accept=".pdf" style="display: none;">
+            </div>
+        </div>
+
+        <div class="pdf-container">
+            <iframe id="pdf-viewer" class="pdf-viewer" src="" frameborder="0"></iframe>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation Bar -->
+    <div class="bottom-navbar">
+        <button class="control-btn" id="prevPage">
+            <i class="fas fa-arrow-left"></i>
+        </button>
+        
+        <div class="page-controls">
+            <span id="currentPage">1</span>
+            <span>of</span>
+            <span id="totalPages">1</span>
+        </div>
+        
+        <div class="page-controls">
+            <span>Go to:</span>
+            <input type="number" class="page-input" id="pageJump" min="1" value="1">
+        </div>
+        
+        <button class="control-btn" id="nextPage">
+            <i class="fas fa-arrow-right"></i>
+        </button>
+    </div>
+
+    <!-- Thumbnails Modal -->
+    <div class="page-thumbnails" id="thumbnailsModal">
+        <span class="close-thumbnails" id="closeThumbnails">
+            <i class="fas fa-times"></i>
+        </span>
+        <div class="thumbnails-container" id="thumbnailsContainer">
+            <!-- Thumbnails will be inserted here -->
+        </div>
+    </div>
+
+    <script>
+        // PDF.js configuration
+        const pdfViewer = document.getElementById('pdf-viewer');
+        const currentPageEl = document.getElementById('currentPage');
+        const totalPagesEl = document.getElementById('totalPages');
+        const pageJump = document.getElementById('pageJump');
+        const prevPage = document.getElementById('prevPage');
+        const nextPage = document.getElementById('nextPage');
+        const fileInput = document.getElementById('fileInput');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const grayscaleBtn = document.getElementById('grayscaleBtn');
+        const thumbnailsBtn = document.getElementById('thumbnailsBtn');
+        const thumbnailsModal = document.getElementById('thumbnailsModal');
+        const closeThumbnails = document.getElementById('closeThumbnails');
+        const thumbnailsContainer = document.getElementById('thumbnailsContainer');
+
+        let pdfDoc = null;
+        let pageNum = 1;
+        let pageRendering = false;
+        let pageNumPending = null;
+        let scale = 1.5;
+
+        // Initialize PDF.js worker
+        pdfjsLib = window['pdfjs-dist/build/pdf'];
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+
+        // Load PDF file
+        function loadPDF(url) {
+            pdfjsLib.getDocument(url).promise.then(function(pdfDoc_) {
+                pdfDoc = pdfDoc_;
+                totalPagesEl.textContent = pdfDoc.numPages;
+                
+                // Render the first page
+                renderPage(pageNum);
+                
+                // Generate thumbnails
+                generateThumbnails();
+            }).catch(function(error) {
+                alert(error.message);
+            });
+        }
+
+        // Render PDF page
+        function renderPage(num) {
+            pageRendering = true;
+            
+            pdfDoc.getPage(num).then(function(page) {
+                const viewport = page.getViewport({ scale: scale });
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+                
+                // Render PDF page into canvas context
+                const renderContext = {
+                    canvasContext: context,
+                    viewport: viewport
+                };
+                
+                const renderTask = page.render(renderContext);
+                
+                renderTask.promise.then(function() {
+                    pageRendering = false;
+                    
+                    if (pageNumPending !== null) {
+                        renderPage(pageNumPending);
+                        pageNumPending = null;
+                    }
+                    
+                    // Update the iframe with the rendered page
+                    const dataUrl = canvas.toDataURL();
+                    pdfViewer.src = dataUrl;
+                    
+                    // Update page display
+                    currentPageEl.textContent = num;
+                    pageJump.value = num;
+                });
+            });
+        }
+
+        // Queue rendering of the next page
+        function queueRenderPage(num) {
+            if (pageRendering) {
+                pageNumPending = num;
+            } else {
+                renderPage(num);
+            }
+        }
+
+        // Previous page
+        function onPrevPage() {
+            if (pageNum <= 1) {
+                return;
+            }
+            pageNum--;
+            queueRenderPage(pageNum);
+        }
+
+        // Next page
+        function onNextPage() {
+            if (pageNum >= pdfDoc.numPages) {
+                return;
+            }
+            pageNum++;
+            queueRenderPage(pageNum);
+        }
+
+        // Jump to page
+        function onPageJump() {
+            const desiredPage = parseInt(pageJump.value);
+            
+            if (desiredPage < 1 || desiredPage > pdfDoc.numPages || isNaN(desiredPage)) {
+                pageJump.value = pageNum;
+                return;
+            }
+            
+            pageNum = desiredPage;
+            queueRenderPage(pageNum);
+        }
+
+        // Generate thumbnails
+        function generateThumbnails() {
+            if (!pdfDoc) return;
+            
+            thumbnailsContainer.innerHTML = '';
+            
+            for (let i = 1; i <= pdfDoc.numPages; i++) {
+                (function(pageNumber) {
+                    pdfDoc.getPage(pageNumber).then(function(page) {
+                        const viewport = page.getViewport(0.5);
+                        const canvas = document.createElement('canvas');
+                        const context = canvas.getContext('2d');
+                        canvas.height = viewport.height;
+                        canvas.width = viewport.width;
+                        
+                        const renderContext = {
+                            canvasContext: context,
+                            viewport: viewport
+                        };
+                        
+                        page.render(renderContext).promise.then(function() {
+                            const thumbnail = document.createElement('div');
+                            thumbnail.className = 'thumbnail';
+                            thumbnail.innerHTML = `
+                                <img src="${canvas.toDataURL()}" alt="Page ${pageNumber}">
+                                <div style="text-align: center; margin-top: 5px;">Page ${pageNumber}</div>
+                            `;
+                            thumbnail.onclick = function() {
+                                pageNum = pageNumber;
+                                queueRenderPage(pageNum);
+                                hideThumbnailsModal();
+                            };
+                            thumbnailsContainer.appendChild(thumbnail);
+                        });
+                    });
+                })(i);
+            }
+        }
+
+        // Toggle grayscale
+        function toggleGrayscale() {
+            pdfViewer.classList.toggle('grayscale');
+            grayscaleBtn.classList.toggle('active');
+        }
+
+        // Set theme
+        function setTheme(theme) {
+            document.body.className = theme + '-mode';
+            localStorage.setItem('theme', theme);
+        }
+
+        // Load saved theme
+        function loadTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            setTheme(savedTheme);
+        }
+
+        // Show thumbnails modal
+        function showThumbnailsModal() {
+            thumbnailsModal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        // Hide thumbnails modal
+        function hideThumbnailsModal() {
+            thumbnailsModal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        // Event listeners
+        prevPage.addEventListener('click', onPrevPage);
+        nextPage.addEventListener('click', onNextPage);
+        pageJump.addEventListener('change', onPageJump);
+        
+        uploadBtn.addEventListener('click',     }
 
     .control-btn:hover {
       background: rgba(255,255,255,0.2);
